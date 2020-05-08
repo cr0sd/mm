@@ -1,0 +1,80 @@
+#!/bin/bash
+
+# Source file for basic configuration and functions for MM
+
+# Config
+logdir=logs
+arcdir=arc
+# How many log archives to keep before deletion:
+arclim=10
+tmpfile=.tmpfile
+def_w=70
+def_h=20
+editor=vim
+spellcheck=true
+
+# Check for missing commands
+check_dependencies()
+{
+	y="dialog vim gzip tar date aspell"
+	for x in $y; do
+		which $x > /dev/null 2> /dev/null
+		[ $? -ne 0 ] && die "error: can't find '$x'"
+	done
+}
+
+# Remove extra archives
+# arch_keep NUMBERARCHIVES
+arc_keep()
+{
+	while true; do
+		x=$(find $arcdir -type f -name *.tar.gz | wc -l)
+		y=$(( $x - $1 ))
+		#[ $y -gt 0 ] && echo "need to remove " \
+			#"$(find -type f -name *.tar.gz | sort | tail -1)"
+
+		# Remove extra files
+		if [ $y -gt 0 ]; then
+			rm -v "$(find -type f -name *.tar.gz | sort | tail -1)"
+		else
+			# No more files to remove
+			echo "No files to remove"
+		fi
+
+		# Quit when $1 or less left
+		[ $(find -type f -name *.tar.gz | wc -l) -le $1 ] && break
+	done #| \
+		#dialog --title "Removing old archives..." --progressbox "" $def_h $def_w
+}
+
+# spellcheck_file FILENAME
+spellcheck_file()
+{
+	if [ $spellcheck = "true" ]; then
+		dialog --title "Spellcheck" --msgbox "Spellchecking '$1'..." $def_h $def_w
+		aspell check $1
+	fi
+}
+
+# die MSG
+die()
+{
+	for x in {0..15}; do echo ""; done
+	echo $1
+	exit $2
+}
+
+# Warning dialog
+warn()
+{
+	dialog --title "Warning" --yesno "$1" $def_h $def_w
+	#[ $? -ne 0 ] && die "$2"
+}
+
+# quit MSG
+quit()
+{
+	for x in {0..15}; do echo ""; done
+	echo "Exited early."
+	exit 3
+}

@@ -1,0 +1,174 @@
+#!/bin/bash
+
+# Source file for opening files with editors for MM
+
+# Config
+prefix=""
+vimsettings="set wrap"
+
+## verifylogfile FILENAME
+#verifylogfile()
+#{
+	#x=$(head -1 $1)
+	#echo $x
+#}
+
+# choose_logfile DIRECTORY
+choose_logfile()
+{
+	# Find all files
+	prefix=$1"/"
+	local m=""
+	local x=$(ls -1 "./$1" |sed 's/[^\s]\+\.bak//')
+	#local x=$(find "$1" -maxdepth 1 -not -name *.bak )
+
+	# Create single line of len(m) * (tag, item, status)
+	for y in $x; do
+		n="-"
+		[ -f $prefix$y ] && n="file"
+		[ -d $prefix$y ] && n="directory"
+		m="$m $y $n $y"
+	done
+
+	# Add default directories
+	#m+=" . directory . "
+	m+=" .. directory .. "
+
+	# Check if directory was empty
+	[ "$m" = "" ] && die "error: '$prefix' is an empty directory"
+
+	# Edit which file?
+	dialog --title "Choose File" --checklist "$prefix" $def_h $def_w 10 $m 2> $tmpfile
+	[ "$?" != 0 ] && return 1
+	retval="$(cat $tmpfile)"
+}
+
+# Open list of files in tabs in Vim
+# open_vim_tabs FILES
+open_vim_tabs()
+{
+	# Open files in Vim tabs
+	[ "$*" = "" ] && return #die "error: no files selected" 1
+
+	# Get first file
+	local mainfile=$(echo $* | cut -d ' ' -f 1)
+	local vimcmd=""
+	if [ $prefix != "" ];	then vimcmd="$editor $prefix$mainfile -c '$vimsettings | "
+							else vimcmd="$editor $mainfile -c '$vimsettings | "; fi
+	local index=0
+
+	# Get other files
+	for x in $*; do
+		if [ $index -eq 1 ]; then
+			[ "$x" != "$mainfile" ] && vimcmd+="tabe $prefix$x "
+		elif [ $index -gt 1 ]; then
+			[ "$x" != "$mainfile" ] && vimcmd+="| tabe $prefix$x "
+		fi
+		index=$(($index+1))
+	done
+
+	# Append closing quote, then return
+	vimcmd+=\'
+	retval=$vimcmd
+
+	echo "$retval" > $tmpfile
+	chmod u+x $tmpfile
+	./$tmpfile
+}
+
+# Open directories
+# open_dir FILES
+open_dir()
+{
+	for x in $*; do
+		if [ -d $prefix$x ]; then
+			choose_open_file $prefix$x
+			return 1
+		elif [ ! -f $prefix$x ]; then
+			die "error: cannot open file of type '$(stat -c '%F' $prefix$x)'"
+		fi
+	done
+	return 0
+}
+
+# Edit file(s) in $editor
+# edit_file FILES
+edit_file()
+{
+	if [ "$*" = "" ]; then
+		warn "Error: no files specified"
+	else
+		# Open file in editor
+		case $editor in
+			vi)
+				;&
+			nvim)
+				;&
+			vim)
+				# vim
+				open_vim_tabs $*
+				;;
+
+			nano)
+				# nano
+				m=""
+				for x in $*; do m="$m $prefix$x"; done
+				echo "$editor $m" > $tmpfile
+				chmod u+x $tmpfile
+				./$tmpfile
+				;;
+
+			ed)
+				# ed can only open one file at a time
+				echo "Opening '$editor' with '$prefix$1':"
+				$editor $prefix$1
+				;;
+
+			*)
+				# Other: confirm to use $editor when unknown
+				#dialog --yesno  $def_h $def_w 2> $tmpfile
+				warn "Warning: attempting to open '$*' with unknown editor '$editor'. Would you still like to proceed?\n\nSince the editor is unknown, it is possible it will not be run correctly."
+				if [ $? -eq 0 ]; then
+					m=""
+					for x in $*; do m="$m $prefix$x"; done
+					# Remove initial whitespace
+					m="$(echo $m | sed 's/^\s*//g')"
+					echo "$editor $m" > $tmpfile
+					chmod u+x $tmpfile
+					echo "Opening '$editor' with '$m':"
+					./$tmpfile
+				else
+					dialog --title "Warning" --msgbox "Not opening '$editor'" $def_h $def_w
+					#die "error: \$editor not found or set"
+				fi
+				;;
+		esac
+	fi
+}
+
+# Main function
+# choose_open_file DIRECTORY
+choose_open_file()
+{
+
+	retval=""
+
+	# Choose file, then edit in Vim tabs
+	choose_logfile $1
+	[ $? -eq 1 ] && return 1
+
+	# Open first chosen directory, ignore others
+	open_dir $retval
+	[ $? -eq 1 ] && return 1
+	filelist=$retval
+
+	# Edit file with $editor
+	edit_file $retval
+
+	# Spellcheck on files if set
+	for x in $filelist; do
+		spellcheck_file $prefix$x
+	done
+
+	prefix=""
+}
