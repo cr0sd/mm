@@ -40,6 +40,8 @@ while true; do
 		"new")
 			;&
 		"New")
+			fndir=$logdir/"$(date +'%y')"
+			[ ! -d $fndir ] && mkdir $fndir
 			fn=$logdir/"$(date +'%y/%j')"
 			z=1
 
