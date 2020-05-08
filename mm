@@ -163,7 +163,7 @@ while true; do
 
 				#exit
 
-				if [ "$list" != "" ]; then
+				if [ "$list" != "" ] && [ "$searchterm" != "" ]; then
 					dialog --title "Search" --checklist "Search results" $def_h $def_w 15 $list 2> $tmpfile
 					if [ $? -eq 0 ]; then
 						$prefix=""
@@ -173,14 +173,14 @@ while true; do
 						spellcheck_file $fn
 						#dialog --title "Spellcheck" --msgbox "Running spellcheck" $def_h $def_w
 						#aspell check $fn
-					else
-						warn "Search cancelled!"
+					#else
+						#warn "Search cancelled!"
 					fi
 				else
 					warn "No results!"
 				fi
-			else
-				warn "Search cancelled"
+			#else
+				#warn "Search cancelled"
 			fi
 			;;
 
