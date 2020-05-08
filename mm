@@ -4,10 +4,11 @@ source ./bin/include
 source ./bin/open
 
 # Read this last, to overwrite settings
-source ./.mmrc
+[ -f ./.mmrc ] && source ./.mmrc
 
 # Config
 check_dependencies
+mm_init
 useargs=0
 [ $# -gt 0 ] && useargs=1
 

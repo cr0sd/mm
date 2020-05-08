@@ -1,3 +1,3 @@
-###Memo Menu
+### Memo Menu
 
 To use: `./mm`
