@@ -17,7 +17,7 @@ archive_opened=0
 # Check for missing commands
 check_dependencies()
 {
-	y="dialog vim gzip tar date aspell"
+	y="dialog vim gzip tar date aspell gpg"
 	for x in $y; do
 		which $x > /dev/null 2> /dev/null
 		[ $? -ne 0 ] && die "error: can't find '$x'"
