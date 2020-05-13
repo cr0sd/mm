@@ -86,7 +86,7 @@ die()
 {
 	for x in {0..15}; do echo ""; done
 	echo $1
-	exit $2
+	quit $2
 }
 
 # Warning dialog
@@ -101,5 +101,5 @@ quit()
 {
 	for x in {0..15}; do echo ""; done
 	echo "Exited early."
-	exit 3
+	exit $1
 }
