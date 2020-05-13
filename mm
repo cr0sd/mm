@@ -16,6 +16,9 @@ useargs=0
 main()
 {
 
+	# Open most recent archive
+	open_archive "./arc/$(ls -t -1 ./arc | head -1)"
+
 	# Menu loop
 	while true; do
 
@@ -316,17 +319,25 @@ main()
 			help)
 				;&
 			Help)
-				echo "usage: mm [new|edit|archive]"
+				echo "usage: mm [new|edit|archive|config] [ARCHIVE]"
 				quit 0
 				;;
 
 			*)
-				echo "error: unknown command '$1'"
-				quit 1
+				if [ -f $1 ]; then
+					#dialog --title "Open archive" --msgbox "'$1'" $def_h $def_w
+
+					# Attempt to open file as archive
+					open_archive $1
+				else
+					echo "error: unknown command or archive file '$1'"
+					quit 1
+				fi
 				;;
 		esac
 	done
 }
 
 # Entry point
-main
+main $*
+rem_logs

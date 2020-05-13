@@ -12,6 +12,7 @@ def_w=70
 def_h=20
 editor=vim
 spellcheck=true
+archive_opened=0
 
 # Check for missing commands
 check_dependencies()
@@ -72,6 +73,37 @@ arc_keep()
 		#dialog --title "Removing old archives..." --progressbox "" $def_h $def_w
 }
 
+# Remove all logs (!)
+# This assumes you have saved archives (!)
+rem_logs()
+{
+	dialog --title "Delete archives" --yesno "All currently loaded logs will be deleted! Would you like to continue?" \
+		$def_h $def_w
+	if [ $? -eq 0 ]; then
+		dialog --title "Delete archives" --msgbox "All logs deleted. You can still access logs stored in archives." \
+			$def_h $def_w
+		find ./logs -type f -regex '.*\/[0-9]+' -exec rm {} +
+	else
+		dialog --title "Delete archives" --msgbox "Logs not deleted." $def_h $def_w
+	fi
+}
+
+open_archive()
+{
+	# Try to treat file as compressed TAR file
+	dialog --title "Open archive" --yesno "Are you sure you would like to open archive '$1'?" $def_h $def_w
+	if [ $? -eq 0 ]; then
+		{
+			gpg -d $1 > "$1.d" 2> /dev/null && \
+			tar xfv "$1.d" -C .;
+			rm "$1.d";
+		} | \
+			dialog --title "Open archive" \
+				--programbox "Opening '$1'..." $def_h $def_w
+		archive_opened=1
+	fi
+}
+
 # spellcheck_file FILENAME
 spellcheck_file()
 {
@@ -101,5 +133,6 @@ quit()
 {
 	for x in {0..15}; do echo ""; done
 	echo "Exited early."
+	rem_logs
 	exit $1
 }
