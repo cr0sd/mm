@@ -82,7 +82,12 @@ rem_logs()
 	if [ $? -eq 0 ]; then
 		dialog --title "Delete archives" --msgbox "All logs deleted. You can still access logs stored in archives." \
 			$def_h $def_w
+		# Be really careful about this line
+		#find ./logs -type f -regex '.*\/[0-9]+' -exec rm {} +
+
 		find ./logs -type f -regex '.*\/[0-9]+' -exec rm {} +
+		find ./logs -type f -regex '.*\/[0-9]+.bak' -exec rm {} +
+		find ./logs -type d -regex '.*\/[0-9]+' -exec rmdir {} +
 	else
 		dialog --title "Delete archives" --msgbox "Logs not deleted." $def_h $def_w
 	fi
